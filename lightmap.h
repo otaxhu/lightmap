@@ -26,7 +26,9 @@ typedef void *lightmap_t;
  * @param len Initial number of entries, can be 0 (in this case lightmap_rehash() with new_len
  *            greater than 0 will need to be called if you want to add entries to this hash table)
  *
- * @returns Opaque type to instance of hash map ready to use
+ * @returns
+ *  - Opaque type to instance of hash map ready to use
+ *  - NULL if there was no memory to allocate the hash table
 */
 lightmap_t lightmap_new(size_t (*hash_func)(const void *key),
                         bool (*key_equals_func)(const void *key1, const void *key2),
