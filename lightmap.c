@@ -69,7 +69,8 @@ bool lightmap_insert(lightmap_t handle, const void *key, const void *value) {
 
     while (h->array_items[i].key != NULL) {
         if (h->key_equals_func(h->array_items[i].key, key)) {
-            break;
+            h->array_items[i] = new_item;
+            return true;
         }
         if (new_item.psl > h->array_items[i].psl) {
             item temp = new_item;
