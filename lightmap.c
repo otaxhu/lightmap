@@ -103,7 +103,9 @@ bool lightmap_get(lightmap_t handle, const void *key, void **out_value) {
             break;
         }
         if (h->key_equals_func(h->array_items[i].key, key)) {
-            *out_value = (void *)h->array_items[i].value;
+            if (out_value) {
+                *out_value = (void *)h->array_items[i].value;
+            }
             return true;
         }
         if (distance > h->array_items[i].psl) {
@@ -183,4 +185,51 @@ bool lightmap_foreach(lightmap_t handle,
     }
 
     return false;
+}
+
+bool lightmap_rehash(lightmap_t handle, size_t new_len) {
+    lightmap_impl *h = (lightmap_impl *)handle;
+    if (new_len <= h->buckets_occupied) {
+        return false;
+    }
+
+    item *new_array_items = calloc(new_len, sizeof(item));
+    if (new_array_items == NULL) {
+        return false;
+    }
+
+    size_t buckets_read = 0;
+
+    for (size_t i = 0; i < h->array_items_len && buckets_read < h->buckets_occupied; i++) {
+        if (h->array_items[i].key == NULL) {
+            continue;
+        }
+        buckets_read++;
+        size_t j = h->hash_func(h->array_items[i].key) % new_len;
+        item rehashed_item = {
+            .key = h->array_items[i].key,
+            .value = h->array_items[i].value,
+            .psl = 0
+        };
+        while (new_array_items[j].key != NULL) {
+            if (rehashed_item.psl > new_array_items[i].psl) {
+                item temp = rehashed_item;
+                rehashed_item = new_array_items[j];
+                new_array_items[j] = temp;
+            }
+            rehashed_item.psl++;
+            j++;
+            if (j == new_len) {
+                j = 0;
+            }
+        }
+        new_array_items[j] = rehashed_item;
+    }
+
+    free(h->array_items);
+
+    h->array_items = new_array_items;
+    h->array_items_len = new_len;
+
+    return true;
 }
