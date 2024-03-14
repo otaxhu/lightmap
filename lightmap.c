@@ -236,3 +236,11 @@ bool lightmap_rehash(lightmap_t handle, size_t new_len) {
 
     return true;
 }
+
+bool lightmap_key_equals_str(const void *key1, const void *key2) {
+    return strcmp((const char *)key1, (const char *)key2) == 0;
+}
+
+bool lightmap_key_equals_direct_ptr(const void *key1, const void *key2) {
+    return key1 == key2;
+}
