@@ -4,12 +4,15 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef void *lightmap_t;
+
+typedef void *lightmap_iter_t;
 
 /**
  * =============
@@ -31,7 +34,7 @@ typedef void *lightmap_t;
  *  - Opaque type to instance of hash map ready to use
  *  - NULL if there was no memory to allocate the hash table
 */
-lightmap_t lightmap_new(size_t (*hash_func)(const void *key),
+lightmap_t lightmap_new(uint32_t (*hash_func)(const void *key),
                         bool (*key_equals_func)(const void *key1, const void *key2),
                         size_t len);
 
@@ -79,19 +82,13 @@ bool lightmap_get(lightmap_t handle, const void *key, void **out_value);
 */
 bool lightmap_delete(lightmap_t handle, const void *key);
 
-/**
- * @param handle Instance of hash table
- * @param foreach_callback Callback that is going to be called for each entry in the hash table
- * @param user_param Param that is going to be passed to each call to foreach_callback
- *
- * @returns
- *  - true: if the callback stopped the execution early by returning true
- *  - false: if the hash table doesn't have entries, or all of the entries were passed succesfully
- *           to foreach_callback
-*/
-bool lightmap_foreach(lightmap_t handle,
-                      bool (*foreach_callback)(const void *key, void *value, void *user_param),
-                      void *user_param);
+lightmap_iter_t lightmap_iter_new(lightmap_t handle);
+
+void lightmap_iter_reset(lightmap_iter_t iter);
+
+void lightmap_iter_free(lightmap_iter_t iter);
+
+bool lightmap_iter_next(lightmap_iter_t iter, void **out_key, void **out_value);
 
 /**
  * @param handle Instance of hash table
@@ -113,9 +110,9 @@ bool lightmap_rehash(lightmap_t handle, size_t new_len);
 
 bool lightmap_key_equals_str(const void *key1, const void *key2);
 bool lightmap_key_equals_direct_ptr(const void *key1, const void *key2);
-#define LIGHTMAP_KEY_EQUALS_BINARY(func_name, binary_size)                                        \
+#define LIGHTMAP_KEY_EQUALS_DECLARE(func_name, data_size)                                         \
 bool func_name(const void *key1, const void *key2) {                                              \
-    return memcmp(key1, key2, (binary_size)) == 0;                                                \
+    return memcmp(key1, key2, (data_size)) == 0;                                                  \
 }
 
 #ifdef __cplusplus
