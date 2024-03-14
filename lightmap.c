@@ -20,14 +20,16 @@ lightmap_t lightmap_new(size_t (*hash_func)(const void *),
                         size_t len)
 {
     item *array_items = NULL;
+    lightmap_impl *l = NULL;
     if (len != 0) {
-        array_items = calloc(len, sizeof(item));
+        array_items = malloc(len * sizeof(item));
         if (array_items == NULL) {
             goto fail;
         }
+        memset(array_items, 0, len * sizeof(item));
     }
 
-    lightmap_impl *l = malloc(sizeof(lightmap_impl));
+    l = malloc(sizeof(lightmap_impl));
     if (l == NULL) {
         goto fail;
     }
