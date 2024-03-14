@@ -11,11 +11,11 @@ typedef struct {
     item *array_items;
     size_t array_items_len;
     size_t buckets_occupied;
-    size_t (*hash_func)(const void *);
+    uint32_t (*hash_func)(const void *);
     bool (*key_equals_func)(const void *, const void *);
 } lightmap_impl;
 
-lightmap_t lightmap_new(size_t (*hash_func)(const void *),
+lightmap_t lightmap_new(uint32_t (*hash_func)(const void *),
                         bool (*key_equals_func)(const void *, const void *),
                         size_t len)
 {
@@ -175,10 +175,11 @@ bool lightmap_rehash(lightmap_t handle, size_t new_len) {
         return false;
     }
 
-    item *new_array_items = calloc(new_len, sizeof(item));
+    item *new_array_items = malloc(new_len * sizeof(item));
     if (new_array_items == NULL) {
         return false;
     }
+    memset(new_array_items, 0, new_len * sizeof(item));
 
     size_t buckets_read = 0;
 
@@ -225,7 +226,7 @@ typedef struct {
 lightmap_iter_t lightmap_iter_new(lightmap_t handle) {
     lightmap_iter_impl *iter = malloc(sizeof(lightmap_iter_impl));
     if (iter == NULL) {
-        goto fail;
+        return NULL;
     }
     *iter = (lightmap_iter_impl){
         .handle = (lightmap_impl *)handle,
@@ -233,9 +234,6 @@ lightmap_iter_t lightmap_iter_new(lightmap_t handle) {
         .buckets_read = 0
     };
     return (lightmap_iter_t)iter;
-fail:
-    free(iter);
-    return NULL;
 }
 
 void lightmap_iter_free(lightmap_iter_t iter) {
@@ -250,10 +248,9 @@ void lightmap_iter_reset(lightmap_iter_t iter) {
 
 bool lightmap_iter_next(lightmap_iter_t iter, void **key_out, void **value_out) {
     lightmap_iter_impl *iterable = (lightmap_iter_impl *)iter;
-    while (iterable->index < iterable->handle->array_items_len && iterable->buckets_read < iterable->handle->buckets_occupied) {
+    for (; iterable->index < iterable->handle->array_items_len && iterable->buckets_read < iterable->handle->buckets_occupied; iterable->index++) {
 
         if (iterable->handle->array_items[iterable->index].key == NULL) {
-            iterable->index++;
             continue;
         }
 
@@ -264,7 +261,6 @@ bool lightmap_iter_next(lightmap_iter_t iter, void **key_out, void **value_out) 
             *value_out = (void *)iterable->handle->array_items[iterable->index].value;
         }
 
-        iterable->index++;
         iterable->buckets_read++;
         return true;
     }
