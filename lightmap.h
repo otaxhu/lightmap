@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -103,6 +104,19 @@ bool lightmap_foreach(lightmap_t handle,
  *           entries in the hash table (prevented loss of data)
 */
 bool lightmap_rehash(lightmap_t handle, size_t new_len);
+
+/**
+ * ============
+ * Key equals function helpers
+ * ============
+*/
+
+bool lightmap_key_equals_str(const void *key1, const void *key2);
+bool lightmap_key_equals_direct_ptr(const void *key1, const void *key2);
+#define LIGHTMAP_KEY_EQUALS_BINARY(func_name, binary_size)                                        \
+bool func_name(const void *key1, const void *key2) {                                              \
+    return memcmp(key1, key2, (binary_size)) == 0;                                                \
+}
 
 #ifdef __cplusplus
 }
