@@ -118,7 +118,8 @@ bool lightmap_key_equals_direct_ptr(const void *key1, const void *key2);
  * This macro may not fit in cases where the data type is a struct or array of structs, since it
  * will compare the padding bits of the struct, and those could have garbage values. In that case
  * you are better off creating your own key equals function for your struct or array of structs,
- * and comparing the members one by one.
+ * and comparing the members one by one. But if you zero-initialize your struct or array of structs
+ * then you may not have any problem.
 */
 #define LIGHTMAP_KEY_EQUALS_DECLARE(func_name, data_size)                                         \
 bool func_name(const void *key1, const void *key2) {                                              \
