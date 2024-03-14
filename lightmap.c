@@ -169,27 +169,6 @@ bool lightmap_delete(lightmap_t handle, const void *key) {
     return false;
 }
 
-bool lightmap_foreach(lightmap_t handle,
-                      bool (*foreach_callback)(const void *key, void *value, void *user_param),
-                      void *user_param)
-{
-    lightmap_impl *h = (lightmap_impl *)handle;
-
-    size_t buckets_read = 0;
-
-    for (size_t i = 0; i < h->array_items_len && buckets_read < h->buckets_occupied; i++) {
-        if (h->array_items[i].key == NULL) {
-            continue;
-        }
-        if (foreach_callback(h->array_items[i].key, (void *)h->array_items[i].value, user_param)) {
-            return true;
-        }
-        buckets_read++;
-    }
-
-    return false;
-}
-
 bool lightmap_rehash(lightmap_t handle, size_t new_len) {
     lightmap_impl *h = (lightmap_impl *)handle;
     if (new_len <= h->buckets_occupied) {
@@ -235,6 +214,61 @@ bool lightmap_rehash(lightmap_t handle, size_t new_len) {
     h->array_items_len = new_len;
 
     return true;
+}
+
+typedef struct {
+    size_t index;
+    size_t buckets_read;
+    lightmap_impl *handle;
+} lightmap_iter_impl;
+
+lightmap_iter_t lightmap_iter_new(lightmap_t handle) {
+    lightmap_iter_impl *iter = malloc(sizeof(lightmap_iter_impl));
+    if (iter == NULL) {
+        goto fail;
+    }
+    *iter = (lightmap_iter_impl){
+        .handle = (lightmap_impl *)handle,
+        .index = 0,
+        .buckets_read = 0
+    };
+    return (lightmap_iter_t)iter;
+fail:
+    free(iter);
+    return NULL;
+}
+
+void lightmap_iter_free(lightmap_iter_t iter) {
+    free(iter);
+}
+
+void lightmap_iter_reset(lightmap_iter_t iter) {
+    lightmap_iter_impl *iterable = (lightmap_iter_impl *)iter;
+    iterable->index = 0;
+    iterable->buckets_read = 0;
+}
+
+bool lightmap_iter_next(lightmap_iter_t iter, void **key_out, void **value_out) {
+    lightmap_iter_impl *iterable = (lightmap_iter_impl *)iter;
+    while (iterable->index < iterable->handle->array_items_len && iterable->buckets_read < iterable->handle->buckets_occupied) {
+
+        if (iterable->handle->array_items[iterable->index].key == NULL) {
+            iterable->index++;
+            continue;
+        }
+
+        if (key_out) {
+            *key_out = (void *)iterable->handle->array_items[iterable->index].key;
+        }
+        if (value_out) {
+            *value_out = (void *)iterable->handle->array_items[iterable->index].value;
+        }
+
+        iterable->index++;
+        iterable->buckets_read++;
+        return true;
+    }
+    return false;
 }
 
 bool lightmap_key_equals_str(const void *key1, const void *key2) {
