@@ -110,6 +110,16 @@ bool lightmap_rehash(lightmap_t handle, size_t new_len);
 
 bool lightmap_key_equals_str(const void *key1, const void *key2);
 bool lightmap_key_equals_direct_ptr(const void *key1, const void *key2);
+
+/**
+ * Macro for declaring a function that compares your data types as keys of the hash map, fits very
+ * well if your data type is a primitive or array of primitives.
+ *
+ * This macro may not fit in cases where the data type is a struct or array of structs, since it
+ * will compare the padding bits of the struct, and those could have garbage values. In that case
+ * you are better off creating your own key equals function for your struct or array of structs,
+ * and comparing the members one by one.
+*/
 #define LIGHTMAP_KEY_EQUALS_DECLARE(func_name, data_size)                                         \
 bool func_name(const void *key1, const void *key2) {                                              \
     return memcmp(key1, key2, (data_size)) == 0;                                                  \
